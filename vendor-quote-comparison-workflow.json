@@ -1,0 +1,672 @@
+{
+  "name": "Compare vendor quote PDFs from Gmail in an Excel price comparison with Claude",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Compare vendor quote PDFs from Gmail in an Excel price comparison with Claude\n\n### Who it's for\nEstimators, contractors and purchasing teams who collect several vendor quotes for the same job and compare them by hand. Forward the quote emails and you get back a workbook that lines the vendors up item by item.\n\n### How it works\n1. **When Quote Emails Arrive** watches Gmail for inbox emails with PDF quotes attached.\n2. **Set Email Processing Config** holds every setting: allowed senders, Claude model, output limit, vendor spellings and currency.\n3. **Filter Allowed Emails** drops senders who aren't on the allow list and puts all of an email's PDFs into one Claude request. **Loop Over Each Quote Email** then handles one email at a time.\n4. **Post to Claude API** sends the PDFs to Claude as documents, so scanned quotes work too with no separate OCR step. Claude returns every priced line through a tool call, and gives each item an `item_key` that is the same across vendors.\n5. **Parse Claude Quote Lines** checks each quote's `qty × unit price` against the subtotal printed on the quote.\n6. **Several Quotes to Compare?** When there are two or more quotes, **Match Items Across Quotes** lines up equivalent items. It finds the lowest price per item, the best-mix total and the cheapest complete quote.\n7. **Create Excel Workbook** writes the .xlsx in plain JavaScript, with no community nodes. It contains:\n   - **Summary**: a live OK/CHECK column for the subtotal check\n   - **Comparison**: unit prices side by side, the lowest highlighted, with Best Quote and Spread % formulas, lead times and totals\n   - one formatted tab per quote\n8. **Reply with Excel Attachment** answers in the same thread with the workbook and a summary of the comparison. A subtotal mismatch is flagged **⚠ CHECK TOTALS**, and failures get a short reply explaining why.\n\n### Setup steps\n- Connect a Gmail credential to the trigger and both reply nodes. A dedicated inbox works best.\n- Add an Anthropic API credential to **Post to Claude API**. The version header is already set.\n- In **Set Email Processing Config**, set `allowedSenders` to your domain or addresses (comma-separated). Leave it empty only for testing, because every processed email uses Claude credits.\n- Activate the workflow and forward two or more quotes for the same job in one email.\n\n### Customization\n- **Outlook:** swap the trigger and reply nodes. The filter step already reads Outlook's sender format.\n- **Price history:** add a Data Table or Google Sheets node after **Parse Claude Quote Lines** to log every quoted line.\n- **Matching rules:** change how `item_key` is assigned in the prompt in **Filter Allowed Emails**.\n\n### Requirements\nGmail account, and an Anthropic API key with a Claude model that accepts PDF input.",
+        "width": 560,
+        "height": 1400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        96
+      ],
+      "id": "aa3e966f-462a-41ad-9419-60cda72fe544",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Receive and configure emails\n\nStarts when quote emails arrive in Gmail, then applies workflow-level settings such as allowed senders, Claude model, token limits, and known vendor details before preparing requests for processing.",
+        "width": 640,
+        "height": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        176
+      ],
+      "id": "32bad670-ecab-4cdc-9d52-debfc48f5f1d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Iterate and check PDFs\n\nProcesses prepared quote emails one at a time and branches based on whether each email has a PDF attachment that can be sent for extraction.",
+        "width": 480,
+        "height": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        176
+      ],
+      "id": "cb6d722f-1bdd-4c01-a6d7-6ca7fe6f5f7f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Extract and parse quotes\n\nSends the PDF quote data to Claude through the Anthropic Messages API, then parses Claude's response into structured spreadsheet rows and checks extracted totals against printed quote subtotals.",
+        "width": 416,
+        "height": 368,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        144
+      ],
+      "id": "78424e5b-4acf-4ca6-ba03-3bb13129f368",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Validate and compare quotes\n\nStops here if no priced lines came back. When the email has two or more quotes, **Match Items Across Quotes** lines up the same item from each vendor using the `item_key` Claude assigned. It then works out the lowest price per item, the best-mix total and the cheapest complete quote.",
+        "width": 660,
+        "height": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -32
+      ],
+      "id": "0a164487-438c-4c47-8431-8759d3a43b5b",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Build workbook and reply\n\nWrites the .xlsx in plain JavaScript: a Summary tab, a Comparison tab when there are several quotes, and one formatted tab per quote. Replies in the same Gmail thread with the file attached and a summary table.",
+        "width": 640,
+        "height": 384,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2272,
+        144
+      ],
+      "id": "667f6123-118c-4c97-8a3f-10e3a6e1cd57",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Send failure reply\n\nNo PDF, a Claude/API error or no priced lines: the sender gets a short reply explaining why, and the loop moves on to the next email.",
+        "width": 480,
+        "height": 336,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2476,
+        560
+      ],
+      "id": "ca2660d3-9863-4b87-8123-6ff0c6a978c5",
+      "name": "Sticky Note6"
+    },
+    {
+      "id": "0afbf6e0-f71d-4487-a4ad-b15286f71fc5",
+      "name": "When Quote Emails Arrive",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        0,
+        340
+      ],
+      "parameters": {
+        "simple": false,
+        "filters": {
+          "q": "in:inbox has:attachment filename:pdf"
+        },
+        "options": {
+          "downloadAttachments": true,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        },
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "43fa50a3-f3f5-410b-9945-5fdae07ac857",
+      "name": "Set Email Processing Config",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        220,
+        340
+      ],
+      "parameters": {
+        "mode": "manual",
+        "options": {
+          "includeBinary": true
+        },
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d13be5d8-2263-4061-b8be-cf801a9c3987",
+              "name": "allowedSenders",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "dc45e0ad-2163-4444-8bb6-9774d66b35b2",
+              "name": "claudeModel",
+              "type": "string",
+              "value": "claude-sonnet-5-5"
+            },
+            {
+              "id": "68547760-372c-4833-afda-80d7e0f89884",
+              "name": "maxOutputTokens",
+              "type": "string",
+              "value": "8000"
+            },
+            {
+              "id": "e286534a-a107-4855-8bd4-a8e782e36102",
+              "name": "knownVendors",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "932dd70c-bbf1-496a-af0e-ba5583367fd1",
+              "name": "currency",
+              "type": "string",
+              "value": "USD"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "6e681063-0035-4ac8-953f-dddb6c860b4a",
+      "name": "Filter Allowed Emails",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        440,
+        340
+      ],
+      "parameters": {
+        "jsCode": "// Reads settings from the Set Email Processing Config node, keeps only emails from allowed senders,\n// and builds one Claude request per email from its PDF attachments.\nconst cfg = $('Set Email Processing Config').first().json;\nconst allowed = String(cfg.allowedSenders || '').split(',').map(s => s.trim().toLowerCase().replace(/^@/, '')).filter(Boolean);\nconst vendors = String(cfg.knownVendors || '').split(',').map(s => s.trim()).filter(Boolean);\n\nconst SYSTEM = `You extract line items from vendor quotes, estimates and proposals so they can be entered into a cost estimate. Record every quote with the record_quote_lines tool. Rules:\n- One line per priced item exactly as quoted. Include freight, tariff, surcharge or fee lines as their own lines when they carry a price.\n- qty: number. unit_price: price per single unit as a plain number (no currency symbols or commas). If only an extended price is shown, unit_price = extended / qty. extended_price: as printed.\n- description: ONE line, max ~90 characters, in the quote's own wording. Lead with the item tag if the quote gives one, then manufacturer, model/part number and key specs.\n- vendor: the company that ISSUED the quote (never the bill-to or ship-to customer).${vendors.length ? ` If it matches one of these, use this exact spelling: ${vendors.join(', ')}.` : ''}\n- quote_number: the quote/estimate/proposal number. quote_subtotal: the printed subtotal before tax (null if none).\n- item_key: a short identifier that is IDENTICAL for equivalent items across ALL attached quotes, so the same item from different vendors can be compared. Use the item tag if one is given, else the manufacturer part/model number, else a short generic item name (e.g. \"PCV-2100\", \"3IN-V150-VALVE\").\n- part_number: the manufacturer part or model number if shown, else null.\n- lead_time: as written for that line; use the quote-level lead time if only one is given; null if none.\n- Items listed but not priced go in not_quoted with the reason, not in lines.\n- Never invent numbers. If something is unreadable, say so in notes.`;\n\nconst TOOL = {\n  name: 'record_quote_lines',\n  description: 'Record the line items from each attached vendor quote.',\n  input_schema: { type: 'object', required: ['quotes'], properties: { quotes: { type: 'array', items: {\n    type: 'object', required: ['vendor', 'lines'], properties: {\n      file_name: { type: 'string' }, vendor: { type: 'string' },\n      quote_number: { type: ['string', 'null'] }, quote_date: { type: ['string', 'null'] },\n      quote_subtotal: { type: ['number', 'null'] },\n      lines: { type: 'array', items: { type: 'object', required: ['item_key', 'qty', 'description', 'unit_price'], properties: {\n        tag: { type: ['string', 'null'] }, item_key: { type: 'string' }, part_number: { type: ['string', 'null'] },\n        qty: { type: 'number' }, description: { type: 'string' },\n        unit_price: { type: 'number' }, extended_price: { type: ['number', 'null'] }, lead_time: { type: ['string', 'null'] } } } },\n      not_quoted: { type: 'array', items: { type: 'string' } }, notes: { type: ['string', 'null'] } } } } } },\n};\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const m = items[i].json;\n  // Gmail (simple off) -> from.value[0].address ; Outlook raw -> from.emailAddress.address\n  const addr = String(m.from?.value?.[0]?.address || m.from?.emailAddress?.address || '').toLowerCase();\n  const name = m.from?.value?.[0]?.name || m.from?.emailAddress?.name || '';\n  if (!addr) continue;\n  if (allowed.length && !allowed.some(a => a.includes('@') ? addr === a : addr.endsWith('@' + a.replace(/^@/, '')))) continue;\n\n  const subject = String(m.subject || '').trim();\n  const jobName = subject.replace(/^\\s*((re|fw|fwd)\\s*:\\s*)+/i, '').replace(/\\s+/g, ' ').trim();\n\n  const docs = [], pdfNames = [];\n  for (const [key, bin] of Object.entries(items[i].binary || {})) {\n    const fn = bin.fileName || key;\n    if (!(bin.mimeType === 'application/pdf' || /\\.pdf$/i.test(fn))) continue;\n    const buf = await this.helpers.getBinaryDataBuffer(i, key);\n    docs.push({ type: 'document', title: fn, source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } });\n    pdfNames.push(fn);\n  }\n\n  const base = { messageId: m.id, replyTo: addr, replyName: name, subject, jobName, pdfNames };\n  if (!docs.length) { out.push({ json: { ...base, status: 'no_pdf' } }); continue; }\n  out.push({ json: { ...base, status: 'ok', claudeBody: {\n    model: cfg.claudeModel, max_tokens: Number(cfg.maxOutputTokens) || 8000, system: SYSTEM,\n    tools: [TOOL], tool_choice: { type: 'auto' },\n    messages: [{ role: 'user', content: [...docs, { type: 'text',\n      text: `Attached: ${pdfNames.join(', ')}. Extract every quote's line items with record_quote_lines (one entry in quotes per PDF/quote). Respond only by calling record_quote_lines.` }] }],\n  } } });\n}\nreturn out;\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "6327c9d3-5afa-4956-8a4e-399b6cac8745",
+      "name": "Loop Over Each Quote Email",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        688,
+        336
+      ],
+      "parameters": {
+        "options": {},
+        "batchSize": 1
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "06412906-2051-44b9-b444-e7f9e0a6954d",
+      "name": "Check for PDF Attachment",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        976,
+        336
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "08115ce6-712e-473d-9893-688d47fffa6a",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "3f540495-2c97-4ac5-9be8-8e2efd431050",
+      "name": "Post to Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "maxTries": 2,
+      "position": [
+        1200,
+        336
+      ],
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "options": {
+          "timeout": 240000
+        },
+        "jsonBody": "={{ JSON.stringify($json.claudeBody) }}",
+        "sendBody": true,
+        "sendHeaders": true,
+        "specifyBody": "json",
+        "authentication": "predefinedCredentialType",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "nodeCredentialType": "anthropicApi"
+      },
+      "retryOnFail": true,
+      "typeVersion": 4.2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "18728f68-b561-4ed6-8ed9-3fb49b138d6f",
+      "name": "Parse Claude Quote Lines",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1408,
+        336
+      ],
+      "parameters": {
+        "jsCode": "// Turns Claude's tool call into spreadsheet rows and checks each quote's lines against its printed subtotal.\nconst g = $('Loop Over Each Quote Email').first().json;\nconst resp = $input.first().json;\nconst quotes = (resp.content || []).find(c => c.type === 'tool_use')?.input?.quotes || [];\nconst r2 = n => Math.round((Number(n) || 0) * 100) / 100;\n\nconst rows = [], checks = [], notQuoted = [], notes = [], grouped = [];\nfor (const q of quotes) {\n  let sum = 0;\n  for (const l of q.lines || []) {\n    const qty = Number(l.qty) || 0, unit = Number(l.unit_price) || 0;\n    sum += qty * unit;\n    rows.push({\n      'Vendor': q.vendor || '', 'Quote #': q.quote_number || '', 'Quote Date': q.quote_date || '',\n      'Tag': l.tag || '', 'Qty': qty, 'Description': l.description || '',\n      'Unit Price': unit, 'Extended': r2(qty * unit), 'Lead Time': l.lead_time || '', 'Source File': q.file_name || '',\n    });\n  }\n  if ((q.lines || []).length) grouped.push({ vendor: q.vendor || '', quote_number: q.quote_number || '', quote_date: q.quote_date || '',\n    file_name: q.file_name || '', quote_subtotal: q.quote_subtotal ?? null, lines: q.lines, not_quoted: q.not_quoted || [], notes: q.notes || '' });\n  const st = q.quote_subtotal;\n  checks.push({ vendor: q.vendor, quote: q.quote_number || '', lines: (q.lines || []).length, sum: r2(sum),\n                subtotal: st == null ? null : r2(st), match: st == null ? null : Math.abs(r2(sum) - r2(st)) < 0.02 });\n  for (const n of q.not_quoted || []) notQuoted.push(`${q.vendor}${q.quote_number ? ' ' + q.quote_number : ''}: ${n}`);\n  if (q.notes) notes.push(`${q.vendor}: ${q.notes}`);\n}\nconst first = quotes[0] || {};\nreturn [{ json: {\n  status: rows.length ? 'ok' : 'no_lines',\n  error: rows.length ? undefined : (resp.stop_reason === 'max_tokens'\n    ? 'The quote was too long for the output limit; raise maxOutputTokens in the Config node.'\n    : 'No priced line items were found in the attached PDF(s).'),\n  jobName: g.jobName || [first.vendor, first.quote_number].filter(Boolean).join(' ') || 'Vendor Quote',\n  rows, checks, notQuoted, notes, quotes: grouped,\n} }];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "fdf5ad9d-e754-4950-af96-fb59f5b08fee",
+      "name": "Verify Line Extraction",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1648,
+        336
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c50c9bf9-9690-48e6-9fae-d00765dd8c58",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "d0277997-3ad9-4f91-ba31-1bdb90825cd0",
+      "name": "Create Excel Workbook",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2308,
+        336
+      ],
+      "parameters": {
+        "jsCode": "// Builds a formatted Excel workbook with no external libraries:\n// a Summary tab (live totals check) plus one formatted tab per quote.\nconst p = $input.first().json;   // from Verify Line Extraction or Match Items Across Quotes\nconst cfg = $('Set Email Processing Config').first().json;\nconst CUR = String(cfg.currency || 'USD');\n\n// ---------- helpers ----------\nconst esc = s => String(s ?? '').replace(/[&<>\"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]))\n  .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g, '');\nconst col = n => { let s = ''; for (n++; n; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };\nconst num = v => (v === null || v === undefined || v === '' || isNaN(Number(v))) ? null : Number(v);\nconst r2 = n => Math.round(n * 100) / 100;\n// style ids (see styles.xml below)\nconst S = { title: 1, sub: 2, head: 3, text: 4, wrap: 5, qty: 6, money: 7, totLabel: 8, totMoney: 9, check: 10, pct: 11 };\nconst cStr = (ref, v, s) => (v === '' || v === null || v === undefined) ? `<c r=\"${ref}\" s=\"${s}\"/>` : `<c r=\"${ref}\" s=\"${s}\" t=\"inlineStr\"><is><t xml:space=\"preserve\">${esc(v)}</t></is></c>`;\nconst cNum = (ref, v, s) => v === null ? `<c r=\"${ref}\" s=\"${s}\"/>` : `<c r=\"${ref}\" s=\"${s}\"><v>${v}</v></c>`;\nconst cF = (ref, f, cached, s, isStr) => `<c r=\"${ref}\" s=\"${s}\"${isStr ? ' t=\"str\"' : ''}><f>${esc(f)}</f>${cached === null || cached === undefined ? '' : `<v>${esc(cached)}</v>`}</c>`;\nconst sheetXml = ({ cols, rows, merges = [], freeze, filter, cf = '' }) =>\n  `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">` +\n  `<sheetPr><pageSetUpPr fitToPage=\"1\"/></sheetPr><sheetViews><sheetView workbookViewId=\"0\">${freeze ? `<pane ySplit=\"${freeze - 1}\" topLeftCell=\"A${freeze}\" activePane=\"bottomLeft\" state=\"frozen\"/>` : ''}</sheetView></sheetViews>` +\n  `<sheetFormatPr defaultRowHeight=\"15\"/><cols>${cols.map((w, i) => `<col min=\"${i + 1}\" max=\"${i + 1}\" width=\"${w}\" customWidth=\"1\"/>`).join('')}</cols>` +\n  `<sheetData>${rows.map(([r, cells, ht]) => `<row r=\"${r}\"${ht ? ` ht=\"${ht}\" customHeight=\"1\"` : ''}>${cells.join('')}</row>`).join('')}</sheetData>` +\n  (filter ? `<autoFilter ref=\"${filter}\"/>` : '') +\n  (merges.length ? `<mergeCells count=\"${merges.length}\">${merges.map(m => `<mergeCell ref=\"${m}\"/>`).join('')}</mergeCells>` : '') + cf +\n  `<pageMargins left=\"0.5\" right=\"0.5\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/><pageSetup orientation=\"landscape\" fitToWidth=\"1\" fitToHeight=\"0\"/></worksheet>`;\n\n// ---------- unique, Excel-safe tab names ----------\nconst taken = new Set(['summary']);\nconst tabName = raw => {\n  let base = String(raw || 'Quote').replace(/[\\[\\]:*?\\/\\\\']/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 31) || 'Quote';\n  let name = base, n = 2;\n  while (taken.has(name.toLowerCase())) { const sfx = ` (${n++})`; name = base.slice(0, 31 - sfx.length) + sfx; }\n  taken.add(name.toLowerCase()); return name;\n};\nconst qref = name => `'${name.replace(/'/g, \"''\")}'`;\n\n// ---------- one tab per quote ----------\nconst quoteSheets = p.quotes.map(q => {\n  const name = tabName([q.vendor, q.quote_number].filter(Boolean).join(' '));\n  const H = ['Tag', 'Qty', 'Description', `Unit Price (${CUR})`, `Extended (${CUR})`, 'Lead Time'];\n  const rows = [\n    [1, [cStr('A1', [q.vendor, q.quote_number].filter(Boolean).join(' — '), S.title)], 22],\n    [2, [cStr('A2', [q.quote_date ? `Quote date: ${q.quote_date}` : '', q.file_name ? `Source: ${q.file_name}` : ''].filter(Boolean).join('   ·   '), S.sub)]],\n    [4, H.map((h, i) => cStr(`${col(i)}4`, h, S.head)), 20],\n  ];\n  let r = 5, sum = 0;\n  for (const l of q.lines) {\n    const qty = num(l.qty), unit = num(l.unit_price), ext = r2((qty || 0) * (unit || 0)); sum += ext;\n    rows.push([r, [cStr(`A${r}`, l.tag || '', S.text), cNum(`B${r}`, qty, S.qty), cStr(`C${r}`, l.description || '', S.wrap),\n      cNum(`D${r}`, unit, S.money), cF(`E${r}`, `B${r}*D${r}`, ext, S.money), cStr(`F${r}`, l.lead_time || '', S.text)]]);\n    r++;\n  }\n  const last = r - 1, totRow = r;\n  rows.push([totRow, [cStr(`A${totRow}`, 'Total', S.totLabel), cStr(`B${totRow}`, '', S.totLabel), cStr(`C${totRow}`, '', S.totLabel),\n    cStr(`D${totRow}`, '', S.totLabel), cF(`E${totRow}`, `SUM(E5:E${last})`, r2(sum), S.totMoney), cStr(`F${totRow}`, '', S.totLabel)], 18]);\n  let rr = totRow + 2;\n  for (const n of q.not_quoted || []) { rows.push([rr, [cStr(`A${rr}`, `Not quoted: ${n}`, S.sub)]]); rr++; }\n  if (q.notes) rows.push([rr, [cStr(`A${rr}`, `Notes: ${q.notes}`, S.sub)]]);\n  return { name, sum: r2(sum), totRow, q, xml: sheetXml({ cols: [14, 7, 70, 16, 16, 18], rows, merges: ['A1:F1', 'A2:F2'], freeze: 5, filter: `A4:F${last}` }) };\n});\n\n// ---------- Summary tab ----------\nconst SH = ['Vendor', 'Quote #', 'Quote Date', 'Lines', `Lines Total (${CUR})`, `Quote Subtotal (${CUR})`, 'Check'];\nconst srows = [\n  [1, [cStr('A1', p.jobName || 'Vendor Quotes', S.title)], 22],\n  [2, [cStr('A2', `${quoteSheets.length} quote(s) · built ${new Date().toISOString().slice(0, 10)} · Lines Total = sum of each quote tab; Check compares it to the subtotal printed on the quote`, S.sub)]],\n  [4, SH.map((h, i) => cStr(`${col(i)}4`, h, S.head)), 20],\n];\nlet sr = 5;\nfor (const s of quoteSheets) {\n  const st = num(s.q.quote_subtotal);\n  const chk = st === null ? 'No subtotal' : (Math.abs(s.sum - st) < 0.02 ? 'OK' : 'CHECK');\n  srows.push([sr, [cStr(`A${sr}`, s.q.vendor || '', S.text), cStr(`B${sr}`, s.q.quote_number || '', S.text), cStr(`C${sr}`, s.q.quote_date || '', S.text),\n    cNum(`D${sr}`, s.q.lines.length, S.qty), cF(`E${sr}`, `${qref(s.name)}!E${s.totRow}`, s.sum, S.money), cNum(`F${sr}`, st, S.money),\n    cF(`G${sr}`, `IF(F${sr}=\"\",\"No subtotal\",IF(ABS(E${sr}-F${sr})<0.02,\"OK\",\"CHECK\"))`, chk, S.check, true)]]);\n  sr++;\n}\nconst sLast = sr - 1;\nsrows.push([sr, [cStr(`A${sr}`, 'All quotes', S.totLabel), ...['B', 'C'].map(c => cStr(`${c}${sr}`, '', S.totLabel)),\n  cF(`D${sr}`, `SUM(D5:D${sLast})`, quoteSheets.reduce((a, s) => a + s.q.lines.length, 0), S.totLabel),\n  cF(`E${sr}`, `SUM(E5:E${sLast})`, r2(quoteSheets.reduce((a, s) => a + s.sum, 0)), S.totMoney),\n  cStr(`F${sr}`, '', S.totLabel), cStr(`G${sr}`, '', S.totLabel)], 18]);\nconst cfXml = `<conditionalFormatting sqref=\"G5:G${sLast}\"><cfRule type=\"cellIs\" dxfId=\"0\" priority=\"1\" operator=\"equal\"><formula>\"CHECK\"</formula></cfRule><cfRule type=\"cellIs\" dxfId=\"1\" priority=\"2\" operator=\"equal\"><formula>\"OK\"</formula></cfRule></conditionalFormatting>`;\n// ---------- Comparison tab (only when Match Items Across Quotes ran) ----------\nlet compSheet = null;\nif (p.comparison) {\n  const cmp = p.comparison, n = cmp.quoteNames.length, first = 5, last = first + cmp.items.length - 1;\n  const pc = i => col(3 + i);                                   // unit-price columns D, E, F…\n  const P0 = pc(0), Pn = pc(n - 1), LOW = col(3 + n), BEST = col(4 + n), SPR = col(5 + n), lc = i => col(6 + n + i);\n  const LAST = lc(n - 1);\n  const H = ['Item', 'Description', 'Qty', ...cmp.quoteNames, `Lowest Unit (${CUR})`, 'Best Quote', 'Spread', ...cmp.quoteNames.map(q => `Lead time · ${q}`)];\n  const rows = [\n    [1, [cStr('A1', `Quote comparison — ${p.jobName || 'Vendor Quotes'}`, S.title)], 22],\n    [2, [cStr('A2', `Unit prices (${CUR}) side by side · green = lowest price for the item · ties are marked and not counted · Spread = highest vs lowest · blank = not quoted`, S.sub)]],\n    [4, H.map((h, i) => cStr(`${col(i)}4`, h, S.head)), 44],\n  ];\n  cmp.items.forEach((it, k) => {\n    const r = first + k, rng = `${P0}${r}:${Pn}${r}`;\n    rows.push([r, [\n      cStr(`A${r}`, it.label, S.text), cStr(`B${r}`, it.description, S.wrap), cNum(`C${r}`, num(it.qty), S.qty),\n      ...it.prices.map((v, i) => cNum(`${pc(i)}${r}`, num(v), S.money)),\n      cF(`${LOW}${r}`, `MIN(${rng})`, it.lowest, S.money),\n      cF(`${BEST}${r}`, `INDEX($${P0}$4:$${Pn}$4,MATCH(${LOW}${r},${rng},0))&IF(COUNTIF(${rng},${LOW}${r})>1,\" (tie)\",\"\")`, it.bestQuote, S.text, true),\n      it.spread === null ? cF(`${SPR}${r}`, `IF(COUNT(${rng})<2,\"\",MAX(${rng})/MIN(${rng})-1)`, '', S.pct, true)\n                         : cF(`${SPR}${r}`, `IF(COUNT(${rng})<2,\"\",MAX(${rng})/MIN(${rng})-1)`, it.spread, S.pct),\n      ...it.leads.map((v, i) => cStr(`${lc(i)}${r}`, v, S.text)),\n    ]]);\n  });\n  const t1 = last + 1, t2 = last + 2, t3 = last + 3;\n  const blankTo = (r, fromIdx, toIdx) => Array.from({ length: toIdx - fromIdx + 1 }, (_, j) => cStr(`${col(fromIdx + j)}${r}`, '', S.totLabel));\n  rows.push([t1, [cStr(`A${t1}`, 'Total at these quantities', S.totLabel), ...blankTo(t1, 1, 2),\n    ...cmp.totals.map((t, i) => cF(`${pc(i)}${t1}`, `SUMPRODUCT($C$${first}:$C$${last},${pc(i)}${first}:${pc(i)}${last})`, t.total, S.totMoney)),\n    cF(`${LOW}${t1}`, `SUMPRODUCT($C$${first}:$C$${last},${LOW}${first}:${LOW}${last})`, cmp.bestMix, S.totMoney),\n    cStr(`${BEST}${t1}`, '← best mix (lowest price on every item)', S.totLabel), ...blankTo(t1, 5 + n, 5 + 2 * n)], 18]);\n  rows.push([t2, [cStr(`A${t2}`, 'Items quoted', S.totLabel), ...blankTo(t2, 1, 2),\n    ...cmp.totals.map((t, i) => cF(`${pc(i)}${t2}`, `COUNT(${pc(i)}${first}:${pc(i)}${last})&\" of ${cmp.itemCount}\"`, `${t.itemsQuoted} of ${cmp.itemCount}`, S.check, true)),\n    ...blankTo(t2, 3 + n, 5 + 2 * n)]]);\n  rows.push([t3, [cStr(`A${t3}`, 'Lowest price on', S.totLabel), ...blankTo(t3, 1, 2),\n    ...cmp.totals.map((t, i) => cF(`${pc(i)}${t3}`, `COUNTIF($${BEST}$${first}:$${BEST}$${last},${pc(i)}$4)&\" item(s)\"`, `${t.lowestOn} item(s)`, S.check, true)),\n    ...blankTo(t3, 3 + n, 5 + 2 * n)]]);\n  const cf = `<conditionalFormatting sqref=\"${P0}${first}:${Pn}${last}\"><cfRule type=\"expression\" dxfId=\"1\" priority=\"1\"><formula>AND(ISNUMBER(${P0}${first}),${P0}${first}=MIN($${P0}${first}:$${Pn}${first}))</formula></cfRule></conditionalFormatting>`;\n  compSheet = { name: 'Comparison', xml: sheetXml({ cols: [14, 46, 7, ...Array(n).fill(16), 16, 32, 9, ...Array(n).fill(20)], rows,\n    merges: [`A1:${LAST}1`, `A2:${LAST}2`], freeze: 5, cf }) };\n}\ntaken.add('comparison');\nconst sheets = [{ name: 'Summary', xml: sheetXml({ cols: [26, 16, 14, 8, 18, 20, 14], rows: srows, merges: ['A1:G1', 'A2:G2'], freeze: 5, cf: cfXml }) },\n  ...(compSheet ? [compSheet] : []), ...quoteSheets];\n\n\n// ---------- package parts ----------\nconst styles = `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">` +\n  `<numFmts count=\"3\"><numFmt numFmtId=\"164\" formatCode=\"#,##0.00\"/><numFmt numFmtId=\"165\" formatCode=\"#,##0.##\"/><numFmt numFmtId=\"166\" formatCode=\"0.0%\"/></numFmts>` +\n  `<fonts count=\"5\"><font><sz val=\"10\"/><name val=\"Arial\"/></font><font><b/><sz val=\"14\"/><color rgb=\"FF1F497D\"/><name val=\"Arial\"/></font>` +\n  `<font><i/><sz val=\"9\"/><color rgb=\"FF666666\"/><name val=\"Arial\"/></font><font><b/><sz val=\"10\"/><color rgb=\"FFFFFFFF\"/><name val=\"Arial\"/></font><font><b/><sz val=\"10\"/><name val=\"Arial\"/></font></fonts>` +\n  `<fills count=\"4\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill>` +\n  `<fill><patternFill patternType=\"solid\"><fgColor rgb=\"FF1F497D\"/></patternFill></fill><fill><patternFill patternType=\"solid\"><fgColor rgb=\"FFDCE6F1\"/></patternFill></fill></fills>` +\n  `<borders count=\"2\"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style=\"thin\"><color rgb=\"FFBFBFBF\"/></left><right style=\"thin\"><color rgb=\"FFBFBFBF\"/></right><top style=\"thin\"><color rgb=\"FFBFBFBF\"/></top><bottom style=\"thin\"><color rgb=\"FFBFBFBF\"/></bottom><diagonal/></border></borders>` +\n  `<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"12\">` +\n  `<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>` +                                                       // 0 default\n  `<xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>` +                                         // 1 title\n  `<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>` +                                         // 2 sub\n  `<xf numFmtId=\"0\" fontId=\"3\" fillId=\"2\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\" vertical=\"center\" wrapText=\"1\"/></xf>` + // 3 header\n  `<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyBorder=\"1\" applyAlignment=\"1\"><alignment vertical=\"top\"/></xf>` + // 4 text\n  `<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyBorder=\"1\" applyAlignment=\"1\"><alignment vertical=\"top\" wrapText=\"1\"/></xf>` + // 5 wrap\n  `<xf numFmtId=\"165\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\" vertical=\"top\"/></xf>` + // 6 qty\n  `<xf numFmtId=\"164\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment vertical=\"top\"/></xf>` + // 7 money\n  `<xf numFmtId=\"0\" fontId=\"4\" fillId=\"3\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\"/>` +          // 8 total label\n  `<xf numFmtId=\"164\" fontId=\"4\" fillId=\"3\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\"/>` + // 9 total money\n  `<xf numFmtId=\"0\" fontId=\"4\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\" vertical=\"top\"/></xf>` + // 10 check\n  `<xf numFmtId=\"166\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\" vertical=\"top\"/></xf>` + // 11 percent\n  `</cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>` +\n  `<dxfs count=\"2\"><dxf><font><b/><color rgb=\"FFC00000\"/></font><fill><patternFill><bgColor rgb=\"FFFFC7CE\"/></patternFill></fill></dxf><dxf><font><color rgb=\"FF006100\"/></font><fill><patternFill><bgColor rgb=\"FFC6EFCE\"/></patternFill></fill></dxf></dxfs></styleSheet>`;\nconst files = {\n  '[Content_Types].xml': `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>${sheets.map((s, i) => `<Override PartName=\"/xl/worksheets/sheet${i + 1}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>`).join('')}</Types>`,\n  '_rels/.rels': `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>`,\n  'xl/workbook.xml': `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s, i) => `<sheet name=\"${esc(s.name)}\" sheetId=\"${i + 1}\" r:id=\"rId${i + 1}\"/>`).join('')}</sheets>${quoteSheets.length ? `<definedNames>${quoteSheets.map(s => `<definedName name=\"_xlnm._FilterDatabase\" localSheetId=\"${sheets.indexOf(s)}\" hidden=\"1\">${esc(qref(s.name))}!$A$4:$F$${s.totRow - 1}</definedName>`).join('')}</definedNames>` : ''}<calcPr calcId=\"191029\" fullCalcOnLoad=\"1\"/></workbook>`,\n  'xl/_rels/workbook.xml.rels': `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">${sheets.map((s, i) => `<Relationship Id=\"rId${i + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet${i + 1}.xml\"/>`).join('')}<Relationship Id=\"rId${sheets.length + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/></Relationships>`,\n  'xl/styles.xml': styles,\n};\nsheets.forEach((s, i) => { files[`xl/worksheets/sheet${i + 1}.xml`] = s.xml; });\n\n// ---------- minimal ZIP writer (stored entries + CRC32) ----------\nconst crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });\nconst crc32 = buf => { let c = 0xFFFFFFFF; for (const b of buf) c = crcTable[(c ^ b) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };\nconst locals = [], centrals = []; let offset = 0;\nfor (const [name, text] of Object.entries(files)) {\n  const nameBuf = Buffer.from(name, 'utf8'), data = Buffer.from(text, 'utf8'), crc = crc32(data);\n  const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0x0800, 6); lh.writeUInt16LE(0, 8);\n  lh.writeUInt16LE(0, 10); lh.writeUInt16LE(0x21, 12); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(data.length, 18); lh.writeUInt32LE(data.length, 22);\n  lh.writeUInt16LE(nameBuf.length, 26); lh.writeUInt16LE(0, 28);\n  const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0x0800, 8); ch.writeUInt16LE(0, 10);\n  ch.writeUInt16LE(0, 12); ch.writeUInt16LE(0x21, 14); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(data.length, 20); ch.writeUInt32LE(data.length, 24);\n  ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt32LE(offset, 42);\n  locals.push(lh, nameBuf, data); centrals.push(ch, nameBuf);\n  offset += 30 + nameBuf.length + data.length;\n}\nconst cd = Buffer.concat(centrals), end = Buffer.alloc(22);\nend.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(Object.keys(files).length, 8); end.writeUInt16LE(Object.keys(files).length, 10);\nend.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);\nconst xlsx = Buffer.concat([...locals, cd, end]);\n\nconst bin = await this.helpers.prepareBinaryData(xlsx, 'quote-lines.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');\nreturn [{ json: { tabs: sheets.map(s => s.name), comparison: p.comparison || null }, binary: { data: bin } }];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "7000dcf7-38c6-4662-9c03-53372c99ab81",
+      "name": "Construct HTML Email Reply",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2528,
+        336
+      ],
+      "parameters": {
+        "jsCode": "// Builds the HTML summary for the reply and keeps the spreadsheet attached.\nconst p = $('Parse Claude Quote Lines').first().json;\nconst cfg = $('Set Email Processing Config').first().json;\nconst esc = s => String(s ?? '').replace(/[&<>\"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst cur = String(cfg.currency || 'USD');\nconst money = n => (n == null || n === '') ? '' : Number(n).toLocaleString('en-US', { style: 'currency', currency: cur });\nconst th = 'style=\"background:#1F497D;color:#fff;padding:4px 8px;text-align:left;font-size:12px\"';\nconst td = 'style=\"border-bottom:1px solid #ddd;padding:4px 8px;font-size:12px;vertical-align:top\"';\nconst tdr = 'style=\"border-bottom:1px solid #ddd;padding:4px 8px;font-size:12px;text-align:right;vertical-align:top\"';\n\nconst checkRows = p.checks.map(c => {\n  const v = c.match === null ? '<span style=\"color:#9a6700\">no subtotal printed — check manually</span>'\n    : c.match ? '<span style=\"color:#1a7f37\">✔ matches the quote subtotal</span>'\n    : `<b style=\"color:#cf222e\">✘ lines total ${money(c.sum)} vs quote subtotal ${money(c.subtotal)} — CHECK</b>`;\n  return `<li>${esc(c.vendor)} ${esc(c.quote)}: ${c.lines} line(s), ${money(c.sum)} — ${v}</li>`;\n}).join('');\nconst rows = p.rows.map(r => `<tr><td ${td}>${esc(r['Vendor'])}</td><td ${td}>${esc(r['Quote #'])}</td><td ${tdr}>${esc(r['Qty'])}</td><td ${td}>${esc(r['Description'])}</td><td ${tdr}>${money(r['Unit Price'])}</td><td ${tdr}>${money(r['Extended'])}</td><td ${td}>${esc(r['Lead Time'])}</td></tr>`).join('');\nconst extra = [];\nif (p.notQuoted.length) extra.push(`<p><b>Not quoted / no price:</b></p><ul>${p.notQuoted.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`);\nif (p.notes.length) extra.push(`<p><b>Notes from the quote:</b></p><ul>${p.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`);\nconst cmp = $input.first().json.comparison;\nconst cmpHtml = !cmp ? '' : `<p><b>Quote comparison</b>: ${cmp.itemCount} item(s), ${cmp.sharedItems} quoted by more than one vendor (see the Comparison tab)</p><ul>${\n  cmp.totals.map(t => `<li>${esc(t.name)}: ${t.itemsQuoted} of ${cmp.itemCount} items, ${money(t.total)}, lowest price on ${t.lowestOn} item(s)</li>`).join('')}</ul>\n<p>Best mix (lowest price on every item): <b>${money(cmp.bestMix)}</b> · Cheapest complete quote: ${cmp.cheapestComplete ? `<b>${esc(cmp.cheapestComplete.name)}</b> ${money(cmp.cheapestComplete.total)}` : 'none of the quotes covers every item'}</p>`;\n\nconst mismatch = p.checks.some(c => c.match === false);\n\nconst html = `<div style=\"font-family:Arial,sans-serif;font-size:13px\">\n${mismatch ? '<p style=\"color:#cf222e\"><b>⚠ CHECK TOTALS: at least one quote does not add up to its printed subtotal.</b></p>' : ''}\n<p>Extracted <b>${p.rows.length}</b> line(s) from <b>${p.checks.length}</b> quote(s). The spreadsheet is attached.</p>\n<p><b>Totals check</b></p><ul>${checkRows}</ul>\n${cmpHtml}\n<table style=\"border-collapse:collapse\"><tr><th ${th}>Vendor</th><th ${th}>Quote #</th><th ${th}>Qty</th><th ${th}>Description</th><th ${th}>Unit</th><th ${th}>Ext</th><th ${th}>Lead time</th></tr>${rows}</table>\n${extra.join('\\n')}</div>`;\n\nconst item = $input.first();\nitem.binary.data.fileName = `Quote Lines - ${p.jobName.replace(/[\\\\/:*?\"<>|]+/g, ' ').trim().slice(0, 80) || 'Vendor Quote'}.xlsx`;\nreturn [{ json: { html }, binary: item.binary }];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "bf640bfb-024e-43bc-9dfe-479f4c3de3c0",
+      "name": "Reply with Excel Attachment",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        2748,
+        336
+      ],
+      "webhookId": "5fd86af0-0276-46ac-b94c-8f277c2bd617",
+      "parameters": {
+        "message": "={{ $json.html }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          },
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        },
+        "resource": "message",
+        "emailType": "html",
+        "messageId": "={{ $('Loop Over Each Quote Email').first().json.messageId }}",
+        "operation": "reply"
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "cd8312bb-3af2-4c09-af26-e14afe8d9b1c",
+      "name": "Explain Missing Spreadsheet",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2528,
+        740
+      ],
+      "parameters": {
+        "jsCode": "// Explains to the sender why no spreadsheet was produced.\nconst g = $('Loop Over Each Quote Email').first().json;\nconst j = $input.first().json;\nconst esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));\nlet reason;\nif (j.status === 'no_pdf') reason = 'No PDF attachment was found. Attach the vendor quote as a PDF and send it again.';\nelse if (j.status === 'no_lines') reason = j.error;\nelse {\n  const e = j.error;\n  reason = typeof e === 'string' ? e : ([e?.message, e?.description].filter(Boolean).join(' — ') || JSON.stringify(e || j).slice(0, 800));\n}\nreturn [{ json: { html: `<div style=\"font-family:Arial,sans-serif;font-size:13px\"><p>Sorry, I couldn't build a spreadsheet from <b>${esc(g.pdfNames.join(', ') || 'this email')}</b>.</p><p><b>Reason:</b> ${esc(reason)}</p></div>` } }];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "3319613d-c23d-4f74-912a-19f9ad7a8db5",
+      "name": "Email Error Notification",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        2748,
+        740
+      ],
+      "webhookId": "1a2a0590-0286-4d3d-8572-15c73b27e8f7",
+      "parameters": {
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        },
+        "resource": "message",
+        "emailType": "html",
+        "messageId": "={{ $('Loop Over Each Quote Email').first().json.messageId }}",
+        "operation": "reply"
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "d38cff85-8de7-4534-95c9-fe422246df7f",
+      "name": "Several Quotes to Compare?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1868,
+        336
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "08f830c1-cd68-4b95-9c79-aa576bcd1206",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              },
+              "leftValue": "={{ $json.quotes.length }}",
+              "rightValue": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "052d274d-c96e-4da9-9be8-2527c7e6a07c",
+      "name": "Match Items Across Quotes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2088,
+        176
+      ],
+      "parameters": {
+        "jsCode": "// Lines up the same item across several quotes (Claude gives equivalent items the same item_key)\n// and works out the lowest price per item, the best-mix total and the cheapest complete quote.\nconst p = $input.first().json;\nconst norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');\nconst r2 = n => Math.round(n * 100) / 100;\n\nconst quoteNames = [];\nconst seen = new Set();\nfor (const q of p.quotes) {               // short unique column names, e.g. \"Acme Valve Q-7781\"\n  let base = [q.vendor, q.quote_number].filter(Boolean).join(' ') || 'Quote';\n  let name = base, n = 2;\n  while (seen.has(name.toLowerCase())) name = `${base} (${n++})`;\n  seen.add(name.toLowerCase()); quoteNames.push(name);\n}\n\nconst items = new Map();                  // key -> { label, description, qty, prices[], leads[] }\np.quotes.forEach((q, qi) => {\n  const usedInThisQuote = new Map();\n  for (const l of q.lines) {\n    let key = norm(l.item_key || l.tag || l.part_number || l.description);\n    const dup = (usedInThisQuote.get(key) || 0) + 1;      // same key twice in one quote -> keep separate\n    usedInThisQuote.set(key, dup);\n    if (dup > 1) key = `${key}#${dup}`;\n    if (!items.has(key)) items.set(key, { key, label: l.item_key || l.tag || l.part_number || '', description: l.description || '',\n      qty: Number(l.qty) || 0, prices: Array(p.quotes.length).fill(null), leads: Array(p.quotes.length).fill('') });\n    const it = items.get(key);\n    it.prices[qi] = Number(l.unit_price);\n    it.leads[qi] = l.lead_time || '';\n  }\n});\n\nconst list = [...items.values()];\nconst shared = list.filter(it => it.prices.filter(v => v !== null).length >= 2).length;\nif (!shared) return [{ json: { ...p, comparison: null } }];   // nothing in common -> no comparison tab\n\nlet bestMix = 0;\nconst lowestCount = Array(p.quotes.length).fill(0);\nfor (const it of list) {\n  const priced = it.prices.map((v, i) => [v, i]).filter(([v]) => v !== null);\n  const [minV, minI] = priced.reduce((a, b) => (b[0] < a[0] ? b : a));\n  const tie = priced.filter(([v]) => Math.abs(v - minV) < 0.005).length > 1;\n  it.lowest = minV; it.bestQuote = quoteNames[minI] + (tie ? ' (tie)' : '');\n  it.spread = priced.length > 1 ? Math.max(...priced.map(x => x[0])) / minV - 1 : null;\n  bestMix += it.qty * minV;\n  if (!tie) lowestCount[minI]++;\n}\nconst totals = quoteNames.map((name, qi) => ({\n  name, itemsQuoted: list.filter(it => it.prices[qi] !== null).length,\n  total: r2(list.reduce((a, it) => a + (it.prices[qi] !== null ? it.qty * it.prices[qi] : 0), 0)),\n  lowestOn: lowestCount[qi],\n}));\nconst complete = totals.filter(t => t.itemsQuoted === list.length).sort((a, b) => a.total - b.total);\n\nreturn [{ json: { ...p, comparison: {\n  quoteNames, items: list, totals, itemCount: list.length, sharedItems: shared,\n  bestMix: r2(bestMix), cheapestComplete: complete[0] || null,\n} } }];\n"
+      }
+    }
+  ],
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "Check for PDF Attachment": {
+      "main": [
+        [
+          {
+            "node": "Post to Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explain Missing Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct HTML Email Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply with Excel Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Line Extraction": {
+      "main": [
+        [
+          {
+            "node": "Several Quotes to Compare?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explain Missing Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Email Processing Config": {
+      "main": [
+        [
+          {
+            "node": "Filter Allowed Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explain Missing Spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Email Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Each Quote Email": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Check for PDF Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Error Notification": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Each Quote Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Claude Quote Lines": {
+      "main": [
+        [
+          {
+            "node": "Verify Line Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Excel Workbook": {
+      "main": [
+        [
+          {
+            "node": "Construct HTML Email Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply with Excel Attachment": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Each Quote Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Allowed Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Each Quote Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Claude API": {
+      "main": [
+        [
+          {
+            "node": "Parse Claude Quote Lines",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explain Missing Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Quote Emails Arrive": {
+      "main": [
+        [
+          {
+            "node": "Set Email Processing Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Several Quotes to Compare?": {
+      "main": [
+        [
+          {
+            "node": "Match Items Across Quotes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Excel Workbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Items Across Quotes": {
+      "main": [
+        [
+          {
+            "node": "Create Excel Workbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
