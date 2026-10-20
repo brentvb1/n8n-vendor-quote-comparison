@@ -35,6 +35,8 @@ formulas.
 
 ## How it works
 
+![Workflow canvas](screenshots/workflow-canvas.png)
+
 ```mermaid
 flowchart LR
   A[Gmail: quote emails<br/>with PDFs] --> B[Config + sender<br/>allow-list]
